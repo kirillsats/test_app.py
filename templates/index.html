@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Sisselogimise/registreerimise vorm -->
+        <div id="auth-section" class="auth-section">
+            <div class="auth-tabs">
+                <button id="login-tab" class="tab-button active">Sisselogimine</button>
+                <button id="register-tab" class="tab-button">Registreerimine</button>
+            </div>
+            
+            <!-- Sisselogimise vorm -->
+            <div id="login-form" class="auth-form">
+                <h2>Sisselogimine</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="login-username">Kasutajanimi:</label>
+                        <input type="text" id="login-username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Parool:</label>
+                        <input type="password" id="login-password" name="password" required>
+                    </div>
+                    <button type="submit">Sisene</button>
+                </form>
+            </div>
+            
+            <!-- Registreerimise vorm -->
+            <div id="register-form" class="auth-form" style="display: none;">
+                <h2>Registreerimine</h2>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="register-username">Kasutajanimi:</label>
+                        <input type="text" id="register-username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Parool:</label>
+                        <input type="password" id="register-password" name="password" required>
+                    </div>
+                    <button type="submit">Registreeri</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Peamine todo rakendus -->
+        <div id="app-section" class="app-section" style="display: none;">
+            <header class="app-header">
+                <h1>Minu Todo List</h1>
+                <div class="user-info">
+                    <span id="welcome-user"></span>
+                    <button id="darkmode-btn" class="btn-secondary">Tume režiim</button>
+                    <button id="profile-btn" class="btn-secondary">Profiil</button>
+                    <button id="change-password-btn" class="btn-secondary">Muuda parooli</button>
+                    <button id="logout-btn" class="btn-secondary">Välja</button>
+                </div>
+            </header>
+
+            <!-- Uue ülesande lisamise vorm -->
+            <div class="add-todo-section">
+                <h3>Lisa uus ülesanne</h3>
+                <form id="addTodoForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="todo-title">Pealkiri:</label>
+                            <input type="text" id="todo-title" name="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="todo-priority">Prioriteet:</label>
+                            <select id="todo-priority" name="priority">
+                                <option value="low">Madal</option>
+                                <option value="medium" selected>Keskmine</option>
+                                <option value="high">Kõrge</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="todo-tags">Sildid (komaeraldatud):</label>
+                            <input type="text" id="todo-tags" name="tags" placeholder="nt Kodu,Töö">
+                        </div>
+                        <div class="form-group">
+                            <label for="todo-attachment">Manus:</label>
+                            <input type="file" id="todo-attachment" name="attachment">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="todo-description">Kirjeldus:</label>
+                        <textarea id="todo-description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="todo-due-date">Tähtaeg:</label>
+                        <input type="date" id="todo-due-date" name="due_date">
+                    </div>
+                    <button type="submit" class="btn-primary">Lisa ülesanne</button>
+                </form>
+            </div>
+
+            <!-- Ülesannete nimekiri -->
+            <div class="todos-section">
+                <h3>Minu ülesanded</h3>
+                <div class="form-row" style="margin-bottom: 10px;">
+                    <div class="form-group">
+                        <label for="search-input">Otsi:</label>
+                        <input type="text" id="search-input" placeholder="Pealkiri või kirjeldus">
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-tag">Filter sildi järgi:</label>
+                        <input type="text" id="filter-tag" placeholder="nt Kodu">
+                    </div>
+                </div>
+                <div class="form-row" style="margin-bottom: 10px;">
+                    <div class="form-group">
+                        <label for="sort-by">Sorteeri:</label>
+                        <select id="sort-by">
+                            <option value="created_at">Loomise aeg</option>
+                            <option value="due_date">Tähtaeg</option>
+                            <option value="priority">Prioriteet</option>
+                            <option value="completed">Staatus</option>
+                            <option value="title">Pealkiri</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sort-dir">Suund:</label>
+                        <select id="sort-dir">
+                            <option value="desc">Kahanev</option>
+                            <option value="asc">Kasvav</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row" style="margin-bottom: 10px;">
+                    <div class="form-group">
+                        <button id="bulk-complete" class="btn-secondary">Märgi tehtuks</button>
+                    </div>
+                    <div class="form-group">
+                        <button id="bulk-incomplete" class="btn-secondary">Tühista tehtud</button>
+                    </div>
+                    <div class="form-group">
+                        <button id="bulk-delete" class="btn-secondary">Kustuta valitud</button>
+                    </div>
+                    <div class="form-group">
+                        <button id="export-btn" class="btn-secondary">Ekspordi JSON</button>
+                    </div>
+                    <div class="form-group">
+                        <input type="file" id="import-file" accept="application/json">
+                    </div>
+                </div>
+                <div id="todos-list" class="todos-list">
+                    <!-- Ülesanded lisatakse siia JavaScript-iga -->
+                </div>
+                <div style="margin-top:20px;">
+                    <h3>Tegevuslogi</h3>
+                    <ul id="activity-list"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parooli muutmise modal -->
+        <div id="password-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>Muuda parooli</h3>
+                <form id="changePasswordForm">
+                    <div class="form-group">
+                        <label for="old-password">Praegune parool:</label>
+                        <input type="password" id="old-password" name="old_password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-password">Uus parool:</label>
+                        <input type="password" id="new-password" name="new_password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-password">Kinnita uus parool:</label>
+                        <input type="password" id="confirm-password" name="confirm_password" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Muuda parooli</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Teadete kuvamine -->
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        // Globaalsed muutujad
+        let currentUser = null;
+        let todos = [];
+        let selectedIds = new Set();
+        let lastQuery = { q: '', tag: '', sort_by: 'created_at', sort_dir: 'desc' };
+
+        // DOM elemendid
+        const authSection = document.getElementById('auth-section');
+        const appSection = document.getElementById('app-section');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const addTodoForm = document.getElementById('addTodoForm');
+        const todosList = document.getElementById('todos-list');
+        const messageDiv = document.getElementById('message');
+        const passwordModal = document.getElementById('password-modal');
+        const changePasswordForm = document.getElementById('changePasswordForm');
+
+        // Sisselogimise/registreerimise vahekaardid
+        const loginTab = document.getElementById('login-tab');
+        const registerTab = document.getElementById('register-tab');
+        const loginFormDiv = document.getElementById('login-form');
+        const registerFormDiv = document.getElementById('register-form');
+
+        // Sündmuste kuulajad
+        document.addEventListener('DOMContentLoaded', function() {
+            // Kontrollib kas kasutaja on juba sisse logitud
+            checkAuthStatus();
+            
+            // Lisab sündmuste kuulajad
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Sisselogimise/registreerimise vahekaardid
+            loginTab.addEventListener('click', () => switchTab('login'));
+            registerTab.addEventListener('click', () => switchTab('register'));
+            
+            // Vormide esitamine
+            loginForm.addEventListener('submit', handleLogin);
+            registerForm.addEventListener('submit', handleRegister);
+            addTodoForm.addEventListener('submit', handleAddTodo);
+            changePasswordForm.addEventListener('submit', handleChangePassword);
+            
+            // Väljalogimine
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+            
+            // Parooli muutmise modal
+            document.getElementById('change-password-btn').addEventListener('click', () => {
+                passwordModal.style.display = 'block';
+            });
+            
+            document.querySelector('.close').addEventListener('click', () => {
+                passwordModal.style.display = 'none';
+            });
+            
+            // Modal sulgemine klikkides väljaspool
+            window.addEventListener('click', (event) => {
+                if (event.target === passwordModal) {
+                    passwordModal.style.display = 'none';
+                }
+            });
+
+            // Otsing/filtrid/sortimine
+            document.getElementById('search-input').addEventListener('input', debounce(applyQuery, 400));
+            document.getElementById('filter-tag').addEventListener('input', debounce(applyQuery, 400));
+            document.getElementById('sort-by').addEventListener('change', applyQuery);
+            document.getElementById('sort-dir').addEventListener('change', applyQuery);
+
+            // Mass-tegevused
+            document.getElementById('bulk-complete').addEventListener('click', () => bulkAction('complete'));
+            document.getElementById('bulk-incomplete').addEventListener('click', () => bulkAction('incomplete'));
+            document.getElementById('bulk-delete').addEventListener('click', () => bulkAction('delete'));
+
+            // Dark mode
+            document.getElementById('darkmode-btn').addEventListener('click', toggleDarkMode);
+            initDarkMode();
+
+            // Profiil
+            document.getElementById('profile-btn').addEventListener('click', openProfile);
+
+            // Eksport/Import
+            document.getElementById('export-btn').addEventListener('click', exportTodos);
+            document.getElementById('import-file').addEventListener('change', importTodos);
+        }
+
+        function switchTab(tab) {
+            // Vahetab sisselogimise/registreerimise vahekaarte
+            if (tab === 'login') {
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+                loginFormDiv.style.display = 'block';
+                registerFormDiv.style.display = 'none';
+            } else {
+                registerTab.classList.add('active');
+                loginTab.classList.remove('active');
+                loginFormDiv.style.display = 'none';
+                registerFormDiv.style.display = 'block';
+            }
+        }
+
+        async function checkAuthStatus() {
+            // Kontrollib kas kasutaja on sisse logitud
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUser = data.user;
+                    showApp();
+                } else {
+                    showAuth();
+                }
+            } catch (error) {
+                showAuth();
+            }
+        }
+
+        function showAuth() {
+            // Näitab autentimise sektsiooni
+            authSection.style.display = 'block';
+            appSection.style.display = 'none';
+        }
+
+        function showApp() {
+            // Näitab peamist rakendust
+            authSection.style.display = 'none';
+            appSection.style.display = 'block';
+            document.getElementById('welcome-user').textContent = `Tere, ${currentUser.username}!`;
+            loadTodos();
+            loadActivity();
+        }
+
+        async function handleLogin(event) {
+            // Käsitleb sisselogimist
+            event.preventDefault();
+            
+            const formData = new FormData(loginForm);
+            const data = {
+                username: formData.get('username'),
+                password: formData.get('password')
+            };
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentUser = { username: data.username };
+                    showMessage('Sisselogimine õnnestus!', 'success');
+                    showApp();
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Viga sisselogimisel', 'error');
+            }
+        }
+
+        async function handleRegister(event) {
+            // Käsitleb registreerimist
+            event.preventDefault();
+            
+            const formData = new FormData(registerForm);
+            const data = {
+                username: formData.get('username'),
+                password: formData.get('password')
+            };
+            
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('Registreerimine õnnestus! Saad nüüd sisse logida.', 'success');
+                    switchTab('login');
+                    registerForm.reset();
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Viga registreerimisel', 'error');
+            }
+        }
+
+        async function handleLogout() {
+            // Käsitleb väljalogimist
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentUser = null;
+                    showMessage('Väljalogimine õnnestus!', 'success');
+                    showAuth();
+                }
+            } catch (error) {
+                showMessage('Viga väljalogimisel', 'error');
+            }
+        }
+
+        async function loadTodos() {
+            // Laadib kasutaja ülesanded
+            try {
+                const params = new URLSearchParams(lastQuery);
+                const response = await fetch('/api/todos?' + params.toString());
+                const data = await response.json();
+                
+                if (data.success) {
+                    todos = data.todos;
+                    renderTodos();
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Viga ülesannete laadimisel', 'error');
+            }
+        }
+
+        function renderTodos() {
+            // Kuvab ülesanded lehel
+            if (todos.length === 0) {
+                todosList.innerHTML = '<p class="no-todos">Ülesandeid pole veel lisatud.</p>';
+                return;
+            }
+            
+            todosList.innerHTML = todos.map(todo => `
+                <div class="todo-item ${todo.completed ? 'completed' : ''}" data-id="${todo.id}">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                        <input type="checkbox" onchange="toggleSelected(${todo.id}, this.checked)" ${selectedIds.has(todo.id) ? 'checked' : ''} />
+                        ${todo.tags ? `<span style="font-size:12px;color:#555;">Sildid: ${escapeHtml(todo.tags)}</span>` : ''}
+                        ${todo.attachment_path ? `<a href="/${todo.attachment_path}" target="_blank">Manus</a>` : ''}
+                    </div>
+                    <div class="todo-header">
+                        <h4 class="todo-title">${escapeHtml(todo.title)}</h4>
+                        <div class="todo-actions">
+                            <button class="btn-small ${todo.completed ? 'btn-undo' : 'btn-complete'}" 
+                                    onclick="toggleTodo(${todo.id})">
+                                ${todo.completed ? 'Tühista' : 'Tehtud'}
+                            </button>
+                            <button class="btn-small btn-delete" onclick="deleteTodo(${todo.id})">Kustuta</button>
+                        </div>
+                    </div>
+                    <div class="todo-details">
+                        ${todo.description ? `<p class="todo-description">${escapeHtml(todo.description)}</p>` : ''}
+                        <div class="todo-meta">
+                            <span class="priority priority-${todo.priority}">${getPriorityText(todo.priority)}</span>
+                            ${todo.due_date ? `<span class="due-date">Tähtaeg: ${todo.due_date}</span>` : ''}
+                            <span class="created-date">Lisatud: ${formatDate(todo.created_at)}</span>
+                        </div>
+                        <div class="form-row" style="margin-top:10px;">
+                            <div class="form-group">
+                                <input type="file" onchange="uploadAttachment(${todo.id}, this.files[0])" />
+                            </div>
+                            ${todo.attachment_path ? `<div class="form-group"><button class="btn-secondary" onclick="removeAttachment(${todo.id})">Eemalda manus</button></div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function handleAddTodo(event) {
+            // Käsitleb uue ülesande lisamist
+            event.preventDefault();
+            
+            const formData = new FormData(addTodoForm);
+            const data = {
+                title: formData.get('title'),
+                description: formData.get('description'),
+                priority: formData.get('priority'),
+                due_date: formData.get('due_date') || null,
+                tags: formData.get('tags')
+            };
+            
+            try {
+                const response = await fetch('/api/todos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('Ülesanne lisatud!', 'success');
+                    addTodoForm.reset();
+                    loadTodos();
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Viga ülesande lisamisel', 'error');
+            }
+        }
+
+        function toggleSelected(id, checked) {
+            // Valik mass-tegevuste jaoks
+            if (checked) selectedIds.add(id); else selectedIds.delete(id);
+        }
+
+        async function bulkAction(action) {
+            // Teostab mass-tegevuse
+            if (selectedIds.size === 0) {
+                showMessage('Vali vähemalt üks ülesanne', 'error');
+                return;
+            }
+            try {
+                const response = await fetch('/api/todos/bulk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, ids: Array.from(selectedIds) })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    selectedIds.clear();
+                    loadTodos();
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (e) {
+                showMessage('Viga mass-tegevuse ajal', 'error');
+            }
+        }
+
+        function applyQuery() {
+            // Rakendab otsingu/filtri/sortimise
+            lastQuery.q = document.getElementById('search-input').value.trim();
+            lastQuery.tag = document.getElementById('filter-tag').value.trim();
+            lastQuery.sort_by = document.getElementById('sort-by').value;
+            lastQuery.sort_dir = document.getElementById('sort-dir').value;
+            loadTodos();
+            loadActivity();
+        }
+
+        function debounce(fn, wait) {
+            let t;
+            return function(...args) {
+                clearTimeout(t);
+                t = setTimeout(() => fn.apply(this, args), wait);
+            };
+        }
+
+        async function toggleTodo(todoId) {
+            // Muudab ülesande olekut (tehtud/tegemata)
+            const todo = todos.find(t => t.id === todoId);
+            if (!todo) return;
+            
+            try {
+                const response = await fetch(`/api/todos/${todoId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ completed: !todo.completed })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    todo.completed = !todo.completed;
+                    renderTodos();
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Viga ülesande uuendamisel', 'error');
+            }
+        }
+
+        async function deleteTodo(todoId) {
+            // Kustutab ülesande
+            if (!confirm('Kas oled kindel, et tahad selle ülesande kustutada?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/todos/${todoId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    todos = todos.filter(t => t.id !== todoId);
+                    renderTodos();
+                    showMessage('Ülesanne kustutatud!', 'success');
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Viga ülesande kustutamisel', 'error');
+            }
+        }
+
+        async function uploadAttachment(todoId, file) {
+            // Laeb faili manusena üles
+            if (!file) return;
+            const form = new FormData();
+            form.append('file', file);
+            try {
+                const response = await fetch(`/api/todos/${todoId}/attachment`, { method: 'POST', body: form });
+                const result = await response.json();
+                if (result.success) {
+                    showMessage('Manus lisatud', 'success');
+                    loadTodos();
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (e) {
+                showMessage('Viga manuse üleslaadimisel', 'error');
+            }
+        }
+
+        async function removeAttachment(todoId) {
+            // Eemaldab manuse
+            try {
+                const response = await fetch(`/api/todos/${todoId}/attachment`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) {
+                    showMessage('Manus eemaldatud', 'success');
+                    loadTodos();
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (e) {
+                showMessage('Viga manuse eemaldamisel', 'error');
+            }
+        }
+
+        async function loadActivity() {
+            // Laeb tegevuslogi
+            try {
+                const res = await fetch('/api/activity');
+                const data = await res.json();
+                if (data.success) {
+                    const ul = document.getElementById('activity-list');
+                    ul.innerHTML = data.logs.map(l => `<li>${escapeHtml(l.action)} - ${escapeHtml(l.details || '')} (${formatDate(l.created_at)})</li>`).join('');
+                }
+            } catch (e) {}
+        }
+
+        async function exportTodos() {
+            // Ekspordib JSON-i
+            try {
+                const res = await fetch('/api/export');
+                const data = await res.json();
+                if (data.success) {
+                    const blob = new Blob([JSON.stringify(data.items, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'todos.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            } catch (e) {}
+        }
+
+        async function importTodos(e) {
+            // Impordib JSON-ist
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const items = JSON.parse(text);
+                const res = await fetch('/api/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items }) });
+                const data = await res.json();
+                if (data.success) {
+                    showMessage('Import õnnestus', 'success');
+                    loadTodos();
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch (err) {
+                showMessage('Vigane fail või import ebaõnnestus', 'error');
+            }
+        }
+
+        function toggleDarkMode() {
+            // Lülitab tumeda režiimi
+            const isDark = document.body.classList.toggle('dark');
+            localStorage.setItem('darkmode', isDark ? '1' : '0');
+        }
+
+        function initDarkMode() {
+            // Initsialiseerib tumeda režiimi
+            const isDark = localStorage.getItem('darkmode') === '1';
+            if (isDark) document.body.classList.add('dark');
+        }
+
+        async function openProfile() {
+            // Lihtne prompt profiili muutmiseks
+            const name = prompt('Uus kasutajanimi:', currentUser.username);
+            if (!name) return;
+            try {
+                const res = await fetch('/api/user/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: name }) });
+                const data = await res.json();
+                if (data.success) {
+                    currentUser.username = name;
+                    document.getElementById('welcome-user').textContent = `Tere, ${currentUser.username}!`;
+                    showMessage('Kasutajanimi uuendatud', 'success');
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch (e) {
+                showMessage('Viga profiili uuendamisel', 'error');
+            }
+        }
+
+        async function handleChangePassword(event) {
+            // Käsitleb parooli muutmist
+            event.preventDefault();
+            
+            const formData = new FormData(changePasswordForm);
+            const oldPassword = formData.get('old_password');
+            const newPassword = formData.get('new_password');
+            const confirmPassword = formData.get('confirm_password');
+            
+            if (newPassword !== confirmPassword) {
+                showMessage('Uued paroolid ei ühti!', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showMessage('Uus parool peab olema vähemalt 6 tähemärki pikk!', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        old_password: oldPassword,
+                        new_password: newPassword
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('Parool muudetud edukalt!', 'success');
+                    passwordModal.style.display = 'none';
+                    changePasswordForm.reset();
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Viga parooli muutmisel', 'error');
+            }
+        }
+
+        function showMessage(message, type) {
+            // Näitab teadet kasutajale
+            messageDiv.textContent = message;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function escapeHtml(text) {
+            // Kaitseb HTML-i süsteemi vastu
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function getPriorityText(priority) {
+            // Tagastab prioriteedi teksti
+            const priorities = {
+                'low': 'Madal',
+                'medium': 'Keskmine',
+                'high': 'Kõrge'
+            };
+            return priorities[priority] || priority;
+        }
+
+        function formatDate(dateString) {
+            // Formateerib kuupäeva
+            const date = new Date(dateString);
+            return date.toLocaleDateString('et-EE');
+        }
+    </script>
+</body>
+</html>
